@@ -173,6 +173,7 @@ changelog/
 !/docs/folder-purposes.md
 !/docs/configuration-and-environment.md
 !/docs/testing.md
+!/docs/dewey-engine.md
 !/docs/categorization-behavior.md
 !/docs/updater-contract.md
 !/docs/storage-plugin-protocol.md
