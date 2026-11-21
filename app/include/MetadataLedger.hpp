@@ -9,8 +9,8 @@
 
 /**
  * @brief The Metadata Maestro ledger: one JSON object per line recording what each apply, restore and verdict
- *        did, and the lessons read back from it. Ported from log and lessons in mm.py, and the lines stay
- *        readable by it. Building a line is pure; only append_line and read_ledger touch the file system.
+ *        did, and the lessons read back from it. Building a line is pure; only append_line and read_ledger touch the
+ * file system.
  */
 namespace MetadataLedger {
 
@@ -27,7 +27,7 @@ struct ApplyRecord {
     std::vector<std::string> dropped;
 };
 
-/** @brief One "apply" line. `at` is a timestamp from the caller. Summary, drops and failures keep mm.py's shape. */
+/** @brief One "apply" line. `at` is a timestamp from the caller. */
 std::string apply_line(const std::string& at, const ApplyRecord& record);
 
 /** @brief One "restore" line listing every file put back or removed. */
@@ -67,7 +67,7 @@ struct Lessons {
 
 /**
  * @brief Read the lessons out of ledger text. Lines that are not JSON objects are ignored; an entry missing a
- *        field only loses that field, where mm.py would stop.
+ *        field only loses that field.
  */
 Lessons lessons(const std::string& ledger_text, const std::string& ledger_path = "");
 

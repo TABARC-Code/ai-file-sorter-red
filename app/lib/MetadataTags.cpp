@@ -35,7 +35,6 @@ std::string upper_ascii(std::string text) {
     return text;
 }
 
-// Mirrors the three maps in scripts/mm.py.
 std::optional<std::string> known_id3(const std::string& key) {
     static const std::map<std::string, std::string> table = {{"title", "TIT2"},
                                                              {"artist", "TPE1"},
@@ -111,7 +110,7 @@ WriteResult failed(const std::string& why) {
     return {false, why};
 }
 
-// Writes ID3v2.3, as mutagen did in mm.py, so older players keep reading the tags.
+// Writes ID3v2.3, so older players keep reading the tags.
 WriteResult write_id3(const std::string& path, const std::vector<Change>& changes) {
     TagLib::MPEG::File file(path.c_str());
     if (!file.isValid()) {

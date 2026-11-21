@@ -7,8 +7,7 @@
 #include <vector>
 
 /**
- * @brief The safety layer around tag writes: backup first, verify after, undo on request. Ported from mm.py
- *        (apply_entry, norm, find_marks, restore, clean).
+ * @brief The safety layer around tag writes: backup first, verify after, undo on request.
  */
 namespace MetadataApply {
 

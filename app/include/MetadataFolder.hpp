@@ -8,8 +8,7 @@
 
 /**
  * @brief Folder-level sidecars: the Audiobookshelf reader.txt and desc.txt files, and the metadata-maestro.json
- *        manifest. Ported from read_folder, the sidecar planner and apply_folder in mm.py. Reading and planning
- *        are pure; apply_folder is the only part that writes.
+ *        manifest. Reading and planning are pure; apply_folder is the only part that writes.
  */
 namespace MetadataFolder {
 

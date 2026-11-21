@@ -5,8 +5,8 @@
 #include <vector>
 
 /**
- * @brief Native tag reading and writing for the Metadata Maestro port, built on the vendored TagLib. The key to
- *        frame, atom and field mapping follows mm.py (ID3 v2.3, iTunes MP4 atoms, Vorbis comments).
+ * @brief Native tag reading and writing, built on the vendored TagLib. Keys map to ID3 v2.3 frames, iTunes MP4 atoms
+ * and Vorbis comment fields.
  */
 namespace MetadataTags {
 

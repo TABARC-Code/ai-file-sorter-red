@@ -60,7 +60,7 @@ TEST_CASE("An apply line is one line of JSON that names the event and the time",
     CHECK(has(line, "\"plan\":\"/plans/p.json\""));
 }
 
-TEST_CASE("An apply line keeps the summary mm.py wrote", "[ledger]") {
+TEST_CASE("An apply line carries its summary", "[ledger]") {
     const std::string line = ml::apply_line("t", sample());
     CHECK(has(line, "\"ok\":3"));
     CHECK(has(line, "\"already_done\":1"));

@@ -10,8 +10,8 @@
 #include "MetadataApply.hpp"
 
 /**
- * @brief Runs a plan of tag edits in batches, with a resumable progress file and a free-space check first. Ported
- *        from the apply loop in mm.py. Files are done one at a time, in plan order.
+ * @brief Runs a plan of tag edits in batches, with a resumable progress file and a free-space check first. Files are
+ * done one at a time, in plan order.
  */
 namespace MetadataBatch {
 

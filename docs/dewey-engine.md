@@ -6,8 +6,8 @@ and what a vault of notes has to look like before anything is written to disk. N
 model. That is deliberate. Rules that can be checked with a unit test should be checked with one, and
 the fuzzy parts should stay out of the way until they are actually needed.
 
-Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All eighteen
-test files are registered in `app/CMakeLists.txt`. Fifteen modules are picked up by the existing source glob.
+Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All nineteen
+test files are registered in `app/CMakeLists.txt`. Sixteen modules are picked up by the existing source glob.
 The three tag modules (`MetadataTags`, `MetadataApply`, `MetadataBatch`) are the exception: they need the
 vendored TagLib in `third_party/taglib`, so they are left out of the app glob and built into the test target
 only, until the main binary links TagLib.
@@ -27,11 +27,12 @@ only, until the main binary links TagLib.
 | `LinkAudit` | The bidirectional-link-engine (v2.0.0) rules for skills. Reads `### > target` and `### < source` contract blocks and audits them by link-matching, not by counting mentions. Also finds chains and loops, lists everything that refers to a skill before it is removed, checks a replacement is wired, and writes a contract block only when every field is real. |
 | `SourceLedger` | The Quiet Council's source arithmetic. Judges a URL's tier on its host alone, merges every researcher's citations into one numbered registry (dedupe key, convergence at three finders), remaps `[SOURCE_n]` tags in a single pass, and prices age and distance from the evidence: a decay class per domain, a temporal penalty that stops at a per-class cap, a citation-depth penalty, and the final weight. "Today" is passed in; nothing reads the clock. |
 | `QuietCouncil` | The rest of the Quiet Council (v3.1.0) that is rules rather than research. The thirteen-researcher registry, depth to model choice, a cost estimate with the academic acknowledgement, session ids, domain routing (six classes, blends of two), audience calibration, the contradiction and steelman rules, the eight Kaizen flags and the three-in-a-row improvement trigger, entity and slug rules, and the plain-Markdown knowledge graph: confirmed facts, disputes, topic index, session log, wiki page. Writers never overwrite; a failed write is reported, not thrown. It reads the graph back for the prior-knowledge block and for stale facts. |
-| `MetadataTags` | Reads and writes tags through the vendored TagLib: ID3 v2.3 for MP3, WAV and AIFF, iTunes atoms for the MP4 family, Vorbis comments for FLAC, Ogg and Opus. The key-to-frame mapping is the one in Metadata Maestro's `mm.py`. Track and disc take `3` or `3/12`; anything else is refused before the file is touched. |
+| `MetadataTags` | Reads and writes tags through the vendored TagLib: ID3 v2.3 for MP3, WAV and AIFF, iTunes atoms for the MP4 family, Vorbis comments for FLAC, Ogg and Opus. Track and disc take `3` or `3/12`; anything else is refused before the file is touched. |
 | `MetadataApply` | The safety layer around a tag write. A fingerprint (size and modification time) stops a file that changed since the plan. A backup is made first; one that matches the plan's fingerprint is our own from a crashed run and is rolled back, any other stops that file. A failed write puts the original back. The result is read back, so a tag that did not stick is reported as dropped. Also `find_marks`, `restore` and `clean` (a dry run unless told otherwise). |
 | `MetadataBatch` | Runs a plan in batches. Progress goes in a plain tab-separated file, one line per file, and only `ok` lines count, so failures are retried. A free-space check comes first: each folder needs the size of its files plus a tenth. A failing file is recorded and the rest carry on. Files run one at a time. |
-| `MetadataFolder` | The folder-level files that sit beside the audio: Audiobookshelf `reader.txt` (narrator) and `desc.txt` (description), and the `metadata-maestro.json` manifest. Reading trims the text files, lists cover files and parses the manifest as strict JSON; a bad one is reported, not guessed at. Planning is pure: one planned value wins, several is a warning, and with none planned a single existing tag value is used. Applying follows the tag rules (`.mm-bak` copy, or a `.mm-new` marker for a new file) and checks every target before the first write. Empty text removes a sidecar; manifest keys are merged and stamped. JsonCpp sorts manifest keys, where `mm.py` kept insertion order. |
-| `MetadataLedger` | The Metadata Maestro ledger: one JSON object per line for each apply, restore and verdict, in the shape `mm.py` wrote, so either tool can read the other's file. Lessons count what each container dropped (`.flac:genre`) and what was accepted or rejected per key; a pair dropped three or more times is proposed as an edit to the field map, using the rule in `MediaCheck`. A line that is not a JSON object is ignored, and an entry missing a field loses only that field, where `mm.py` stopped. Nothing calls it yet: apply and restore do not write to it on their own. |
+| `MetadataFolder` | The folder-level files that sit beside the audio: Audiobookshelf `reader.txt` (narrator) and `desc.txt` (description), and the `metadata-maestro.json` manifest. Reading trims the text files, lists cover files and parses the manifest as strict JSON; a bad one is reported, not guessed at. Planning is pure: one planned value wins, several is a warning, and with none planned a single existing tag value is used. Applying follows the tag rules (`.mm-bak` copy, or a `.mm-new` marker for a new file) and checks every target before the first write. Empty text removes a sidecar; manifest keys are merged and stamped. Manifest keys are written sorted. |
+| `MetadataLedger` | The Metadata Maestro ledger: one JSON object per line for each apply, restore and verdict. Lessons count what each container dropped (`.flac:genre`) and what was accepted or rejected per key; a pair dropped three or more times is proposed as an edit to the field map, using the rule in `MediaCheck`. A line that is not a JSON object is ignored, and an entry missing a field loses only that field. Nothing calls it yet: apply and restore do not write to it on their own. |
+| `MetadataPlanFile` | The saved plan as JSON: tool and version, a summary, entries per file (family, fingerprint, changes with before and after values, cover instructions) and per folder. Reading is strict: a plan from another major version, a missing entries or folders list, or an entry without a file, family, fingerprint or well-formed changes is refused with the entry number. `batch_input` hands the tag families (`id3`, `mp4`, `vorbis`) to `MetadataBatch` and lists the rest as unsupported rather than dropping them; `folder_changes` feeds `MetadataFolder`. Comments are refused and a repeated key keeps the last value. |
 | `DeweyShelf` | Lets Dewey anchors steer where media is shelved. Audio is `780.AUD` and video `791.VID`, in folders named from the anchor (`780-music-and-audio/<artist>/<album>`). Evidence is graded honestly: an extension alone is `low`, tags make music `medium`, a jazz genre `high` (781.65), rock 781.66, and classical leaves the number blank because it is arranged by form and medium. A narrator, a spoken-word genre or an `.m4b` makes it an audiobook, anchored `000` and shelved in `000-audiobooks`, never as music, since it should be classed with the work. Shelved files skip Archive (a music library is old and still in use); everything else goes through `FileOrganizerRules` unchanged. `manifest_sets` turns a guess into `dewey`, `dewey_anchor`, `dewey_confidence` and `dewey_note` for the folder manifest. Tags are handed in, not read. |
 
 ## The command-line tool
@@ -119,56 +120,49 @@ Change them if you disagree.
 - "Vague" is a heuristic that only flags clear cases. Data of one or two words ending in data, information,
   info, output, analysis, results or stuff. An action under three words, or a stock phrase such as "use as
   needed". A feedback loop that is not "none" and is under four words or names no target. The skill gives
-  examples, not a rule, so these lists are mine.
+  examples, not a rule, so these lists are a judgement call.
 - A block fails if a Critical, High or Medium finding is attached to it. Orphans, prose mentions and chain
   notes are Low and never fail a block.
 - An orphan has no contract of its own and is not named by anyone else's. For the prose checks, two skills
   count as linked if a contract names either end. A prose mention is a whole-name match, so `b` is not found
   in `b-extra`, and it is reported once per file. Skills with ordinary-word names (`docs`, `router`) make a
   lot of Low noise. That is the rule working as written.
-- `missing-chain-annotation` is my reading of the chain rule that the middle of a chain should say where its
+- `missing-chain-annotation` is a reading of the chain rule that the middle of a chain should say where its
   data originated: for `x > y > z`, the `y > z` block should name `x`, unless `x` has its own contract with `z`.
   It cannot tell a pass-through chain from a transformed one, so it is only ever Low.
 - Chain search stops after 1000 candidates. A loop is listed once, starting at its alphabetically first skill.
-- Quiet Council domain routing matches a keyword at the start of a word. The Python used a bare substring, so
-  "AI" fired inside "Spain" and "said". A keyword of three letters or fewer must be the whole word, with an
+- Quiet Council domain routing matches a keyword at the start of a word, so "AI" does not fire inside "Spain"
+  or "said". A keyword of three letters or fewer must be the whole word, with an
   "s" or "es" allowed, and "WHO" only counts when it is capitalised. "State" and "power" still match
   "statement" and "powered", because the word-start rule cannot tell them apart.
 - A topic whose top class scores twice the runner-up wins outright; otherwise the two leading classes are
-  blended, as in the original. Ties go to the class listed first, as Python's `max` does.
+  blended. Ties go to the class listed first.
 - The blend's 0.5 to 2.0 clamp is gone. Every configured weight is between 0.5 and 1.6, so an average cannot
   leave the range and the clamp could never fire.
-- The original checks whether a topic heading exists with a substring test, so `## screen` counts as present
-  when `## screen-time` is. Here a heading must be a whole line. A disputed claim is always written, with or
-  without the heading. The original writes only the heading when the topic is new and drops the dispute itself,
-  because of how its conditional expression meets the adjacent string literals.
-- Session numbers are one more than the highest logged for the date. The original counts every mention of the
-  date's id, so a gap in the log, or an id mentioned twice, repeats or skips a number. Only runs of one to
+- A topic heading counts as present only as a whole line, so `## screen` is not found in `## screen-time`. A
+  disputed claim is always written, with or without the heading.
+- Session numbers are one more than the highest logged for the date. Counting every mention of the date's id
+  would repeat or skip a number after a gap, or after an id mentioned twice. Only runs of one to
   nine digits are read; a longer run is ignored rather than overflowing.
 - Keyword matching and entity extraction run on text where non-ASCII spaces become a space and non-ASCII
   punctuation becomes a full stop, so a curly quote, an em dash or a non-breaking space no longer glues two
-  words together. A stray or malformed UTF-8 byte is dropped. The original's `\w` treated all of those as word
-  characters.
-- The original also filters the blend on "at least 0.7 of the runner-up". The top two classes always pass that
-  test, so it is gone.
+  words together. A stray or malformed UTF-8 byte is dropped.
 - A slug drops Latin-1 symbols (including the multiplication sign), the General Punctuation block and ASCII
-  punctuation, keeps other letters, and cuts at 80 characters rather than bytes. Python's `\w` keeps a
-  leading or trailing underscore as a hyphen; this does not.
+  punctuation, keeps other letters, and cuts at 80 characters rather than bytes. A leading or trailing underscore
+  does not become a hyphen.
 - An entity is a run of two or more words that each look like `Capital` then lower-case ASCII, separated by
-  whitespace only. "NASA", "McDonald" and accented names do not count. It is a heuristic, as it was in the
-  original, whose own comment says to hand this to a model in production.
+  whitespace only. "NASA", "McDonald" and accented names do not count. It is a heuristic; a model does this
+  better.
 - The Kaizen flag texts and actions are the quality checker's table. A flag is raised from numbers the caller
   counts; this code does not read a synthesis to find an uncited claim.
-- Prices for the cost estimate are the skill's own, at 2k tokens in and 2k out per call. I did not check them
-  against Perplexity's current price list, so treat the figure as an order of magnitude.
-- Temporal decay follows the sub-skill's `apply_temporal_penalty` code (`subskills/temporal-layer.md`), as you
-  chose. Each class starts losing confidence after its threshold (SLOW 5 years, MEDIUM 3, FAST 1, BREAKING 0.5)
-  at a rate per year (0.010, 0.033, 0.080, 0.150) and stops at a floor (0.70, 0.60, 0.50, 0.40). `temporal.py`
-  used a different rate and a single 0.40 floor, so its numbers differ.
-- The sub-skill's prose disagrees with its own code. The prose says FAST loses 20% a year and BREAKING 30% per
-  six months, compounding; the code subtracts a fixed rate per year, linearly. The code is followed here.
+- Prices for the cost estimate are the skill's own, at 2k tokens in and 2k out per call. They have not been
+  checked against Perplexity's current price list, so treat the figure as an order of magnitude.
+- Temporal decay follows the sub-skill's `apply_temporal_penalty` code (`subskills/temporal-layer.md`). Each class starts losing confidence after its threshold (SLOW 5 years, MEDIUM 3,
+  FAST 1, BREAKING 0.5) at a rate per year (0.010, 0.033, 0.080, 0.150) and stops at a floor (0.70, 0.60, 0.50, 0.40).
+- FAST loses 20% a year and BREAKING 30% per six months in the sub-skill's prose; the rates above subtract a
+  fixed amount per year, linearly, and those are the ones used.
 - A fact or source is stale when its penalty is more than the threshold (default 20%), as in the sub-skill's
-  check. Earlier versions used "at least".
+  check.
 - Contracts are written or not at all. A placeholder, a vague field or a field spanning lines gets nothing
   back, because a weak block is worse than a missing one.
 - Embeds (`![[x]]`) are not links. An unresolved link is a warning, since a note you mean to write later is
@@ -181,20 +175,17 @@ Change them if you disagree.
   validates what those steps produce. It does not produce it.
 - Any hook into the Qt app. The modules are not yet called from the GUI or the headless runtime.
 - Cover art, and the image and remux writers. `MetadataTags` writes MP3, M4A, FLAC and Ogg tags; it does not
-  embed covers, write EXIF or XMP, or remux a container. A plan has no file format yet (`mm.py` used JSON),
+  embed covers, write EXIF or XMP, or remux a container. Nothing builds a plan from a folder yet,
   and nothing writes ledger lines automatically.
 - Reading or measuring media. `MediaCheck` needs the facts (bit rate, levels, tags) handed to it, and nothing
   here runs ffprobe or exiftool. Noise floor is not measured at all, and `MediaCheck` says so every time.
 - The Quiet Council's research itself. The Sonar calls, the thirteen prompts' wording, contradiction
   detection, steelman arguments, synthesis and the audience rewrite are model work. The code grades and files
-  what those steps produce. In the original, `run_council.py` only stubs the prior-knowledge load from the
-  graph; `prior_knowledge_block` here is a working version of it, but nothing yet feeds it to a prompt.
+  what those steps produce. `prior_knowledge_block` reads the graph back, but nothing yet feeds it to a prompt.
 - Parts of the bidirectional-link engine. `LinkAudit` covers the audit, chain finding, the blast radius and
   replacement check for removing a skill, the type weights, and contract writing. It does not decide which link
   type fits two skills (the cross-link-mapper step, which is judgement), classify a chain link as pass-through or
   transformed, or rewrite anyone's contracts. The types and weights are a table; contracts do not carry a type.
-  I ported from `SKILL.md` and its six sub-skills, and checked the result against the skill's list of rejected
-  patterns. I read the worked example but did not use it as a test fixture.
 - A full app build. These modules were built and tested standalone; nobody has yet compiled them
   inside the Qt project. The CMake wiring for the tag modules was checked in a stand-in project with the same
   TagLib block, source exclusion and link line, because Qt was not available where it was written.
