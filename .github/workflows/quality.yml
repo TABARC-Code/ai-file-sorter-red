@@ -1,0 +1,27 @@
+name: Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Complexity and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          pip install lizard
+      - name: Complexity (CCN 12 or under)
+        run: python3 -m lizard -C 12 -w $(cat .github/quality-files.txt | sed -n 's#^lib:\(.*\)#app/lib/\1.cpp#p')
+      - name: Format
+        run: clang-format --dry-run --Werror $(cat .github/quality-files.txt | sed -n -e 's#^lib:\(.*\)#app/lib/\1.cpp#p' -e 's#^include:\(.*\)#app/include/\1.hpp#p' -e 's#^test:\(.*\)#tests/unit/\1.cpp#p')
