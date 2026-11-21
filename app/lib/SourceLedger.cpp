@@ -65,6 +65,10 @@ bool ends_with(const std::string& text, const std::string& tail) {
 }
 
 bool host_matches(const std::string& host, const std::string& entry) {
+    // A leading dot is not a valid host, so it never matches a list entry.
+    if (host.empty() || host.front() == '.') {
+        return false;
+    }
     if (entry.front() == '.') {
         return ends_with(host, entry);
     }

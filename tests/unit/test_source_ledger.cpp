@@ -634,3 +634,24 @@ TEST_CASE("Remapping prefers the longest key and keeps equal-length keys in orde
     CHECK(remap_content("ab", {{"a", "1"}, {"ab", "2"}}) == "2");
     CHECK(remap_content("aa bb", {{"aa", "X"}, {"bb", "Y"}}) == "X Y");
 }
+
+TEST_CASE("A host with a leading dot is not a known host", "[source-ledger]") {
+    CHECK(classify_tier("https://.arxiv.org/x") == Tier::Tier3);
+    CHECK(classify_tier("https://.nature.com/x") == Tier::Tier3);
+    CHECK(classify_tier("https://sub.arxiv.org/x") == Tier::Tier1);
+}
+
+TEST_CASE("A port that is not all digits stays in the host", "[source-ledger]") {
+    CHECK(host_of("https://example.com:80x/p") == "example.com:80x");
+    CHECK(host_of("https://example.com:/p") == "example.com");
+}
+
+TEST_CASE("ISO dates with a bad digit in the month or day are refused", "[source-ledger]") {
+    CHECK_FALSE(parse_iso_date("2024-0x-01").has_value());
+    CHECK_FALSE(parse_iso_date("2024-0x-0y").has_value());
+    CHECK_FALSE(parse_iso_date("2024-03-1").has_value());
+    CHECK_FALSE(parse_iso_date("2024-03-011").has_value());
+    CHECK_FALSE(parse_iso_date("2024-1x-01").has_value());
+    CHECK_FALSE(parse_iso_date("2024-03-3x").has_value());
+    CHECK_FALSE(parse_iso_date("2024-1x-3x").has_value());
+}
