@@ -926,6 +926,7 @@ list(REMOVE_ITEM APP_LIB_SOURCES ${AIFS_TEST_ONLY_APP_SOURCES})
 # Tag writer needs the vendored TagLib, which only the test target links for now.
 set(AIFS_TAG_WRITER_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataTags.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataApply.cpp"
 )
 list(REMOVE_ITEM APP_LIB_SOURCES ${AIFS_TAG_WRITER_SOURCES})
 file(GLOB APP_HEADER_SOURCES CONFIGURE_DEPENDS
@@ -2046,6 +2047,7 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_link_audit.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_source_ledger.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_tags.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_apply.cpp"
         ${AIFS_TAG_WRITER_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_quiet_council.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_protected_project_detector.cpp"

@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
+#include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <random>
 #include <string>
 
 #include "MetadataTags.hpp"
@@ -14,8 +16,15 @@ namespace {
 const std::string kFixtures = FIXTURE_DIR;
 
 // Copies a fixture into a fresh temp folder so each case starts with no tags.
+std::string unique_suffix() {
+    static std::random_device device;
+    static unsigned counter = 0;
+    const auto ticks = std::chrono::steady_clock::now().time_since_epoch().count();
+    return std::to_string(device()) + "-" + std::to_string(ticks) + "-" + std::to_string(++counter);
+}
+
 std::string scratch_copy(const std::string& name) {
-    const fs::path dir = fs::temp_directory_path() / ("mm-tags-" + name + "-" + std::to_string(std::rand()));
+    const fs::path dir = fs::temp_directory_path() / ("mm-tags-" + name + "-" + unique_suffix());
     fs::create_directories(dir);
     const fs::path target = dir / ("tagged" + fs::path(name).extension().string());
     fs::copy_file(fs::path(kFixtures) / name, target, fs::copy_options::overwrite_existing);
@@ -101,7 +110,7 @@ TEST_CASE("An empty value removes a tag and leaves the others alone", "[metadata
 }
 
 TEST_CASE("Writing to an unsupported file reports an error and changes nothing", "[metadata-tags]") {
-    const fs::path dir = fs::temp_directory_path() / "mm-tags-unsupported";
+    const fs::path dir = fs::temp_directory_path() / ("mm-tags-unsupported-" + unique_suffix());
     fs::create_directories(dir);
     const std::string path = (dir / "notes.txt").string();
     { std::ofstream(path) << "hello"; }
