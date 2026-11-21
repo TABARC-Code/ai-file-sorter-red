@@ -6,8 +6,8 @@ and what a vault of notes has to look like before anything is written to disk. N
 model. That is deliberate. Rules that can be checked with a unit test should be checked with one, and
 the fuzzy parts should stay out of the way until they are actually needed.
 
-Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All nineteen
-test files are registered in `app/CMakeLists.txt`. Sixteen modules are picked up by the existing source glob.
+Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All twenty
+test files are registered in `app/CMakeLists.txt`. Seventeen modules are picked up by the existing source glob.
 The three tag modules (`MetadataTags`, `MetadataApply`, `MetadataBatch`) are the exception: they need the
 vendored TagLib in `third_party/taglib`, so they are left out of the app glob and built into the test target
 only, until the main binary links TagLib.
@@ -33,6 +33,7 @@ only, until the main binary links TagLib.
 | `MetadataFolder` | The folder-level files that sit beside the audio: Audiobookshelf `reader.txt` (narrator) and `desc.txt` (description), and the `metadata-maestro.json` manifest. Reading trims the text files, lists cover files and parses the manifest as strict JSON; a bad one is reported, not guessed at. Planning is pure: one planned value wins, several is a warning, and with none planned a single existing tag value is used. Applying follows the tag rules (`.mm-bak` copy, or a `.mm-new` marker for a new file) and checks every target before the first write. Empty text removes a sidecar; manifest keys are merged and stamped. Manifest keys are written sorted. |
 | `MetadataLedger` | The Metadata Maestro ledger: one JSON object per line for each apply, restore and verdict. Lessons count what each container dropped (`.flac:genre`) and what was accepted or rejected per key; a pair dropped three or more times is proposed as an edit to the field map, using the rule in `MediaCheck`. A line that is not a JSON object is ignored, and an entry missing a field loses only that field. Nothing calls it yet: apply and restore do not write to it on their own. |
 | `MetadataPlanFile` | The saved plan as JSON: tool and version, a summary, entries per file (family, fingerprint, changes with before and after values, cover instructions) and per folder. Reading is strict: a plan from another major version, a missing entries or folders list, or an entry without a file, family, fingerprint or well-formed changes is refused with the entry number. `batch_input` hands the tag families (`id3`, `mp4`, `vorbis`) to `MetadataBatch` and lists the rest as unsupported rather than dropping them; `folder_changes` feeds `MetadataFolder`. Comments are refused and a repeated key keeps the last value. |
+| `MetadataResolve` | Turns a request (set or clear these tags on these files) into a saved plan by checking each file as it is now. Reading the files is handed in as functions, so it stays pure. A value already in place is left out; a changed one keeps what it was; `__clear__` or an empty value removes a tag, and clearing an absent tag is nothing. A file that cannot be read or has no tag writer is warned about and left out. |
 | `DeweyShelf` | Lets Dewey anchors steer where media is shelved. Audio is `780.AUD` and video `791.VID`, in folders named from the anchor (`780-music-and-audio/<artist>/<album>`). Evidence is graded honestly: an extension alone is `low`, tags make music `medium`, a jazz genre `high` (781.65), rock 781.66, and classical leaves the number blank because it is arranged by form and medium. A narrator, a spoken-word genre or an `.m4b` makes it an audiobook, anchored `000` and shelved in `000-audiobooks`, never as music, since it should be classed with the work. Shelved files skip Archive (a music library is old and still in use); everything else goes through `FileOrganizerRules` unchanged. `manifest_sets` turns a guess into `dewey`, `dewey_anchor`, `dewey_confidence` and `dewey_note` for the folder manifest. Tags are handed in, not read. |
 
 ## The command-line tool
@@ -175,7 +176,7 @@ Change them if you disagree.
   validates what those steps produce. It does not produce it.
 - Any hook into the Qt app. The modules are not yet called from the GUI or the headless runtime.
 - Cover art, and the image and remux writers. `MetadataTags` writes MP3, M4A, FLAC and Ogg tags; it does not
-  embed covers, write EXIF or XMP, or remux a container. Nothing builds a plan from a folder yet,
+  embed covers, write EXIF or XMP, or remux a container. Nothing reads real files into `MetadataResolve` or runs a plan from the command line yet,
   and nothing writes ledger lines automatically.
 - Reading or measuring media. `MediaCheck` needs the facts (bit rate, levels, tags) handed to it, and nothing
   here runs ffprobe or exiftool. Noise floor is not measured at all, and `MediaCheck` says so every time.

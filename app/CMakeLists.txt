@@ -2054,6 +2054,7 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_ledger.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_dewey_shelf.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_plan_file.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_resolve.cpp"
         ${AIFS_TAG_WRITER_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_quiet_council.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_protected_project_detector.cpp"
