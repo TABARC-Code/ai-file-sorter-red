@@ -9,6 +9,10 @@
 
 #include "MetadataTags.hpp"
 
+#ifndef _WIN32
+#include <sys/stat.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace MetadataApply {
@@ -144,18 +148,48 @@ std::string normalise(const std::string& value, const std::string& key) {
     return total == "0" ? strip_zeros(head) : strip_zeros(head) + "/" + total;
 }
 
+namespace {
+
+/** Nanoseconds since the Unix epoch. The C++17 file clock has no fixed epoch, so ask the system. */
+std::optional<long long> modified_ns(const std::string& path) {
+#ifdef _WIN32
+    std::error_code ec;
+    const auto stamp = fs::last_write_time(path, ec);
+    if (ec) {
+        return std::nullopt;
+    }
+    // The Windows file clock counts 100 ns ticks from 1601.
+    constexpr long long kUnixFromFileTime = 11644473600LL * 1000000000LL;
+    return static_cast<long long>(
+               std::chrono::duration_cast<std::chrono::nanoseconds>(stamp.time_since_epoch()).count()) -
+           kUnixFromFileTime;
+#else
+    struct stat info {};
+    if (::stat(path.c_str(), &info) != 0) {
+        return std::nullopt;
+    }
+#ifdef __APPLE__
+    const timespec& stamp = info.st_mtimespec;
+#else
+    const timespec& stamp = info.st_mtim;
+#endif
+    return static_cast<long long>(stamp.tv_sec) * 1000000000LL + static_cast<long long>(stamp.tv_nsec);
+#endif
+}
+
+}  // namespace
+
 std::optional<Fingerprint> fingerprint(const std::string& path) {
     std::error_code ec;
     const auto size = fs::file_size(path, ec);
     if (ec) {
         return std::nullopt;
     }
-    const auto stamp = fs::last_write_time(path, ec);
-    if (ec) {
+    const auto ns = modified_ns(path);
+    if (!ns) {
         return std::nullopt;
     }
-    const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp.time_since_epoch()).count();
-    return Fingerprint{size, static_cast<long long>(ns)};
+    return Fingerprint{size, *ns};
 }
 
 Verdict verify_edits(const std::vector<Edit>& edits, const std::map<std::string, std::string>& got) {

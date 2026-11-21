@@ -6,6 +6,11 @@
 #include <random>
 #include <string>
 
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#endif
+
 #include "MetadataApply.hpp"
 #include "MetadataTags.hpp"
 
@@ -65,6 +70,19 @@ TEST_CASE("Track and disc compare as numbers, everything else as trimmed text", 
     CHECK(ma::normalise("0x", "track") == "0x");
     CHECK(ma::normalise("x/05", "disc") == "x/05");
 }
+
+#ifndef _WIN32
+TEST_CASE("A fingerprint's time is nanoseconds since the Unix epoch", "[apply]") {
+    const std::string dir = scratch_dir("epoch");
+    const std::string path = dir + "/a.mp3";
+    fs::copy_file(fs::path(kFixtures) / "a.mp3", path);
+    timespec times[2] = {{1700000000, 123456789}, {1700000000, 123456789}};
+    REQUIRE(utimensat(AT_FDCWD, path.c_str(), times, 0) == 0);
+    const auto print = ma::fingerprint(path);
+    REQUIRE(print.has_value());
+    CHECK(print->mtime_ns == 1700000000123456789LL);
+}
+#endif
 
 TEST_CASE("A fingerprint is size and modification time, and a missing file has none", "[apply]") {
     const std::string dir = scratch_dir("fp");

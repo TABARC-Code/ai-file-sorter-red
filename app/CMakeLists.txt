@@ -928,6 +928,7 @@ set(AIFS_TAG_WRITER_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataTags.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataApply.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataBatch.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataCli.cpp"
 )
 list(REMOVE_ITEM APP_LIB_SOURCES ${AIFS_TAG_WRITER_SOURCES})
 file(GLOB APP_HEADER_SOURCES CONFIGURE_DEPENDS
@@ -2055,6 +2056,7 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_dewey_shelf.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_plan_file.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_resolve.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_cli.cpp"
         ${AIFS_TAG_WRITER_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_quiet_council.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_protected_project_detector.cpp"
@@ -2146,6 +2148,20 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         "FIXTURE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../tests/fixtures/metadata/\""
     )
     target_link_libraries(ai_file_sorter_tests PRIVATE tag ZLIB::ZLIB)
+
+    # Command-line tool over the metadata modules. It needs only TagLib and JsonCpp, not Qt.
+    add_executable(aifs_metadata
+        "${CMAKE_CURRENT_SOURCE_DIR}/metadata_tool.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/MediaCheck.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataPlan.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataPlanFile.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataResolve.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataFolder.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataLedger.cpp"
+        ${AIFS_TAG_WRITER_SOURCES})
+    target_include_directories(aifs_metadata PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    target_compile_definitions(aifs_metadata PRIVATE TAGLIB_STATIC)
+    target_link_libraries(aifs_metadata PRIVATE tag ZLIB::ZLIB JsonCpp::JsonCpp)
 
     # The vendored tree keeps TagLib headers in subfolders, but the code uses the
     # flat installed names. Add the header folders to MetadataTags.cpp only, so
