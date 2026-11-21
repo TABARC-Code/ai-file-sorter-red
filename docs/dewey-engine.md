@@ -6,8 +6,8 @@ and what a vault of notes has to look like before anything is written to disk. N
 model. That is deliberate. Rules that can be checked with a unit test should be checked with one, and
 the fuzzy parts should stay out of the way until they are actually needed.
 
-Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All sixteen
-test files are registered in `app/CMakeLists.txt`. Thirteen modules are picked up by the existing source glob.
+Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All seventeen
+test files are registered in `app/CMakeLists.txt`. Fourteen modules are picked up by the existing source glob.
 The three tag modules (`MetadataTags`, `MetadataApply`, `MetadataBatch`) are the exception: they need the
 vendored TagLib in `third_party/taglib`, so they are left out of the app glob and built into the test target
 only, until the main binary links TagLib.
@@ -31,6 +31,7 @@ only, until the main binary links TagLib.
 | `MetadataApply` | The safety layer around a tag write. A fingerprint (size and modification time) stops a file that changed since the plan. A backup is made first; one that matches the plan's fingerprint is our own from a crashed run and is rolled back, any other stops that file. A failed write puts the original back. The result is read back, so a tag that did not stick is reported as dropped. Also `find_marks`, `restore` and `clean` (a dry run unless told otherwise). |
 | `MetadataBatch` | Runs a plan in batches. Progress goes in a plain tab-separated file, one line per file, and only `ok` lines count, so failures are retried. A free-space check comes first: each folder needs the size of its files plus a tenth. A failing file is recorded and the rest carry on. Files run one at a time. |
 | `MetadataFolder` | The folder-level files that sit beside the audio: Audiobookshelf `reader.txt` (narrator) and `desc.txt` (description), and the `metadata-maestro.json` manifest. Reading trims the text files, lists cover files and parses the manifest as strict JSON; a bad one is reported, not guessed at. Planning is pure: one planned value wins, several is a warning, and with none planned a single existing tag value is used. Applying follows the tag rules (`.mm-bak` copy, or a `.mm-new` marker for a new file) and checks every target before the first write. Empty text removes a sidecar; manifest keys are merged and stamped. JsonCpp sorts manifest keys, where `mm.py` kept insertion order. |
+| `DeweyShelf` | Lets Dewey anchors steer where media is shelved. Audio is `780.AUD` and video `791.VID`, in folders named from the anchor (`780-music-and-audio/<artist>/<album>`). Evidence is graded honestly: an extension alone is `low`, tags make music `medium`, a jazz genre `high` (781.65), rock 781.66, and classical leaves the number blank because it is arranged by form and medium. A narrator, a spoken-word genre or an `.m4b` makes it an audiobook, anchored `000` and shelved in `000-audiobooks`, never as music, since it should be classed with the work. Shelved files skip Archive (a music library is old and still in use); everything else goes through `FileOrganizerRules` unchanged. `manifest_sets` turns a guess into `dewey`, `dewey_anchor`, `dewey_confidence` and `dewey_note` for the folder manifest. Tags are handed in, not read. |
 
 ## The command-line tool
 
