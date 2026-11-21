@@ -541,3 +541,96 @@ TEST_CASE("final_weight multiplies what survives each penalty", "[source-ledger]
     CHECK(final_weight(0.0, 0.0) == Approx(1.0));
     CHECK(final_weight(0.6, 0.22) == Approx(0.312));
 }
+
+// Added after the mutation pass on SourceLedger: calendar edges, path and arXiv dates, citation id lengths.
+
+TEST_CASE("Every month ends where the calendar says, and no later", "[source-ledger]") {
+    const int lengths[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    for (int m = 1; m <= 12; ++m) {
+        const std::string mm = m < 10 ? "0" + std::to_string(m) : std::to_string(m);
+        const std::string last = "2023-" + mm + "-" + std::to_string(lengths[m - 1]);
+        const std::string over = "2023-" + mm + "-" + std::to_string(lengths[m - 1] + 1);
+        INFO("month " << m);
+        CHECK(parse_iso_date(last).has_value());
+        CHECK_FALSE(parse_iso_date(over).has_value());
+    }
+}
+
+TEST_CASE("Leap years follow the Gregorian rule", "[source-ledger]") {
+    CHECK(parse_iso_date("2024-02-29").has_value());
+    CHECK(parse_iso_date("2000-02-29").has_value());
+    CHECK_FALSE(parse_iso_date("2023-02-29").has_value());
+    CHECK_FALSE(parse_iso_date("1900-02-29").has_value());
+    CHECK_FALSE(parse_iso_date("2100-02-29").has_value());
+}
+
+TEST_CASE("Day counts cross century and 400-year boundaries", "[source-ledger]") {
+    const auto d = [](const char* s) { return *parse_iso_date(s); };
+    CHECK(days_between(d("1970-01-01"), d("2000-01-01")) == 10957);
+    CHECK(days_between(d("1600-01-01"), d("2000-01-01")) == 146097);
+    CHECK(days_between(d("2000-02-28"), d("2000-03-01")) == 2);
+    CHECK(days_between(d("1900-02-28"), d("1900-03-01")) == 1);
+    CHECK(days_between(d("2100-02-28"), d("2100-03-01")) == 1);
+    CHECK(days_between(d("2024-02-28"), d("2024-03-01")) == 2);
+}
+
+TEST_CASE("Path dates read a year, a month and an optional day", "[source-ledger]") {
+    CHECK(extract_source_date("https://x.org/2024/05/07/post") == std::optional<std::string>("2024-05-07"));
+    CHECK(extract_source_date("https://x.org/2024/05/x") == std::optional<std::string>("2024-05-01"));
+    CHECK(extract_source_date("https://x.org/2024/12/31") == std::optional<std::string>("2024-12-31"));
+    CHECK_FALSE(extract_source_date("https://x.org/2024/13/01").has_value());
+    CHECK_FALSE(extract_source_date("https://x.org/2024/02/30").has_value());
+    CHECK_FALSE(extract_source_date("https://x.org/2024/00/10").has_value());
+}
+
+TEST_CASE("arXiv identifiers give the month, including January and December", "[source-ledger]") {
+    CHECK(extract_source_date("https://arxiv.org/abs/2401.00001") == std::optional<std::string>("2024-01-01"));
+    CHECK(extract_source_date("https://arxiv.org/abs/2412.00001") == std::optional<std::string>("2024-12-01"));
+    CHECK_FALSE(extract_source_date("https://arxiv.org/abs/2400.00001").has_value());
+    CHECK_FALSE(extract_source_date("https://arxiv.org/abs/2413.00001").has_value());
+}
+
+TEST_CASE("Citation ids read one to nine digits, and only those", "[source-ledger]") {
+    CHECK(citation_ids_in("[SOURCE_7]") == std::vector<int>{7});
+    CHECK(citation_ids_in("[SOURCE_12] and [SOURCE_345]") == std::vector<int>{12, 345});
+    CHECK(citation_ids_in("[SOURCE_999999999]") == std::vector<int>{999999999});
+    CHECK(citation_ids_in("[SOURCE_1234567890]").empty());
+    CHECK(citation_ids_in("[SOURCE_12x]").empty());
+}
+
+TEST_CASE("A bare low-signal host is low signal, with or without a path", "[source-ledger]") {
+    CHECK(classify_tier("https://reddit.com/r/x") == Tier::Tier4);
+    CHECK(classify_tier("https://reddit.com") == Tier::Tier4);
+}
+
+TEST_CASE("Short and edge-position date strings are read or refused, never misread", "[source-ledger]") {
+    CHECK_FALSE(extract_source_date("https://arxiv.org/abs/").has_value());
+    CHECK_FALSE(extract_source_date("https://arxiv.org/abs/24").has_value());
+    CHECK(extract_source_date("/2024/05/07") == std::optional<std::string>("2024-05-07"));
+    CHECK(extract_source_date("/2024/05/") == std::optional<std::string>("2024-05-01"));
+}
+
+TEST_CASE("Only the exact ISO shape parses", "[source-ledger]") {
+    CHECK_FALSE(parse_iso_date("2024/05/07").has_value());
+    CHECK_FALSE(parse_iso_date("2024-05/07").has_value());
+    CHECK_FALSE(parse_iso_date("2024-05-07x").has_value());
+    CHECK_FALSE(parse_iso_date("202-05-07").has_value());
+    CHECK_FALSE(parse_iso_date("2024-5-07").has_value());
+    CHECK_FALSE(parse_iso_date("2024-05-").has_value());
+    CHECK(parse_iso_date("2024-05-07").has_value());
+}
+
+TEST_CASE("A port number is dropped from the host", "[source-ledger]") {
+    CHECK(host_of("https://example.com:8080/x") == "example.com");
+    CHECK(host_of("https://example.com/x") == "example.com");
+}
+
+TEST_CASE("The most common citation depth wins, whichever depth that is", "[source-ledger]") {
+    const auto p = propagate_confidence(0.8, {Depth::Secondary, Depth::Secondary, Depth::Primary});
+    CHECK(p.note.find("SECONDARY dominant") != std::string::npos);
+}
+
+TEST_CASE("Remapping prefers the longest key and keeps equal-length keys in order", "[source-ledger]") {
+    CHECK(remap_content("ab", {{"a", "1"}, {"ab", "2"}}) == "2");
+    CHECK(remap_content("aa bb", {{"aa", "X"}, {"bb", "Y"}}) == "X Y");
+}
