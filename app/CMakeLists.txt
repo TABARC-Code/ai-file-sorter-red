@@ -923,6 +923,11 @@ set(AIFS_TEST_ONLY_APP_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/MainAppTestAccess.cpp"
 )
 list(REMOVE_ITEM APP_LIB_SOURCES ${AIFS_TEST_ONLY_APP_SOURCES})
+# Tag writer needs the vendored TagLib, which only the test target links for now.
+set(AIFS_TAG_WRITER_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/MetadataTags.cpp"
+)
+list(REMOVE_ITEM APP_LIB_SOURCES ${AIFS_TAG_WRITER_SOURCES})
 file(GLOB APP_HEADER_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
 )
@@ -2005,6 +2010,16 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         endforeach()
     endfunction()
 
+    find_package(ZLIB REQUIRED)
+    # Vendored TagLib. Its defaults already give a static build, examples off and
+    # zlib on. Bindings default to ON and their directory is not vendored, so turn
+    # them off. Plain variables do not work for this: its cmake_minimum_required
+    # (3.5) puts CMP0077 in OLD mode, so option() overrides them. The cache write
+    # is the only override that holds, and only TagLib reads BUILD_BINDINGS.
+    set(BUILD_BINDINGS OFF CACHE BOOL "TagLib bindings are not vendored" FORCE)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../third_party/taglib"
+                     "${CMAKE_CURRENT_BINARY_DIR}/taglib-build")
+
     aifs_add_windows_test_executable(ai_file_sorter_tests
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/helpers/StoragePluginConformanceHarness.cpp"
         ${APP_LIB_SOURCES}
@@ -2030,6 +2045,8 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_vault_roundtrip.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_link_audit.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_source_ledger.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_tags.cpp"
+        ${AIFS_TAG_WRITER_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_quiet_council.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_protected_project_detector.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_local_llm_backend.cpp"
@@ -2114,6 +2131,27 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
     aifs_set_windows_test_runtime_output(aifs_storage_plugin_stub)
+
+    target_compile_definitions(ai_file_sorter_tests PRIVATE
+        TAGLIB_STATIC
+        "FIXTURE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../tests/fixtures/metadata/\""
+    )
+    target_link_libraries(ai_file_sorter_tests PRIVATE tag ZLIB::ZLIB)
+
+    # The vendored tree keeps TagLib headers in subfolders, but the code uses the
+    # flat installed names. Add the header folders to MetadataTags.cpp only, so
+    # their basenames cannot shadow includes in any other test file.
+    file(GLOB_RECURSE _aifs_taglib_headers CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/taglib/taglib/*.h")
+    list(FILTER _aifs_taglib_headers EXCLUDE REGEX "/tests/")
+    set(_aifs_taglib_include_dirs "")
+    foreach(_aifs_taglib_header IN LISTS _aifs_taglib_headers)
+        get_filename_component(_aifs_taglib_dir "${_aifs_taglib_header}" DIRECTORY)
+        list(APPEND _aifs_taglib_include_dirs "${_aifs_taglib_dir}")
+    endforeach()
+    list(REMOVE_DUPLICATES _aifs_taglib_include_dirs)
+    set_property(SOURCE ${AIFS_TAG_WRITER_SOURCES} APPEND PROPERTY
+        INCLUDE_DIRECTORIES ${_aifs_taglib_include_dirs})
 
     target_include_directories(ai_file_sorter_tests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
