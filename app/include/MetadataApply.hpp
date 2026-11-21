@@ -1,5 +1,3 @@
-// MetadataApply: the safety layer around tag writes, ported from scripts/mm.py (apply_entry, norm,
-// find_marks, restore, clean). Backup first, verify after, undo on request.
 #pragma once
 
 #include <cstdint>
@@ -8,7 +6,11 @@
 #include <string>
 #include <vector>
 
-namespace metadata_apply {
+/**
+ * @brief The safety layer around tag writes: backup first, verify after, undo on request. Ported from mm.py
+ *        (apply_entry, norm, find_marks, restore, clean).
+ */
+namespace MetadataApply {
 
 inline constexpr const char* kBackupSuffix = ".mm-bak";
 inline constexpr const char* kCreatedSuffix = ".mm-new";
@@ -85,4 +87,4 @@ struct CleanResult {
 /** @brief Dry run unless `yes`: lists the markers, deletes them only when told to. */
 CleanResult clean(const std::vector<std::string>& targets, bool yes);
 
-}  // namespace metadata_apply
+}  // namespace MetadataApply

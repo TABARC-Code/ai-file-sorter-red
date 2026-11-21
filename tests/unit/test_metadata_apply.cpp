@@ -9,8 +9,8 @@
 #include "MetadataApply.hpp"
 #include "MetadataTags.hpp"
 
-namespace ma = metadata_apply;
-namespace mt = metadata_tags;
+namespace ma = MetadataApply;
+namespace mt = MetadataTags;
 namespace fs = std::filesystem;
 
 namespace {

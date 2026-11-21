@@ -11,7 +11,7 @@
 
 namespace fs = std::filesystem;
 
-namespace metadata_apply {
+namespace MetadataApply {
 
 namespace {
 
@@ -76,7 +76,7 @@ void put_back(const std::string& path, const std::string& backup) {
 std::map<std::string, std::string> read_back(const std::string& path, const std::vector<Edit>& edits) {
     std::map<std::string, std::string> got;
     for (const Edit& edit : edits) {
-        if (const auto value = metadata_tags::read_tag(path, edit.key)) {
+        if (const auto value = MetadataTags::read_tag(path, edit.key)) {
             got[edit.key] = *value;
         }
     }
@@ -195,11 +195,11 @@ Outcome apply_entry(const std::string& path, const Fingerprint& planned, const s
     if (!no_backup && !copy_keeping_time(path, backup)) {
         return failure("could not make a backup");
     }
-    std::vector<metadata_tags::Change> changes;
+    std::vector<MetadataTags::Change> changes;
     for (const Edit& edit : edits) {
         changes.push_back({edit.key, edit.to});
     }
-    const auto wrote = metadata_tags::write_tags(path, changes);
+    const auto wrote = MetadataTags::write_tags(path, changes);
     if (!wrote.ok) {
         if (!no_backup) {
             put_back(path, backup);
@@ -271,4 +271,4 @@ CleanResult clean(const std::vector<std::string>& targets, bool yes) {
     return result;
 }
 
-}  // namespace metadata_apply
+}  // namespace MetadataApply

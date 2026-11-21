@@ -9,7 +9,7 @@
 
 namespace fs = std::filesystem;
 
-namespace metadata_batch {
+namespace MetadataBatch {
 
 namespace {
 
@@ -84,7 +84,7 @@ void record(std::ofstream& progress, const std::string& line) {
 }
 
 void run_one(const PlannedEntry& entry, const Options& options, std::ofstream& progress, Report& report) {
-    const auto outcome = metadata_apply::apply_entry(entry.path, entry.fingerprint, entry.edits, options.no_backup);
+    const auto outcome = MetadataApply::apply_entry(entry.path, entry.fingerprint, entry.edits, options.no_backup);
     if (!outcome.ok) {
         report.failures.push_back({entry.path, outcome.error});
         record(progress, encode_progress("failed", entry.path, outcome.error));
@@ -140,7 +140,7 @@ std::string space_problem(const std::vector<PlannedEntry>& entries, bool no_back
     return "";
 }
 
-std::vector<std::string> describe_drops(const std::string& path, const metadata_apply::Verdict& verdict) {
+std::vector<std::string> describe_drops(const std::string& path, const MetadataApply::Verdict& verdict) {
     const std::string name = fs::path(path).filename().string();
     std::vector<std::string> out;
     for (const auto& dropped : verdict.dropped) {
@@ -186,4 +186,4 @@ Report run(const std::vector<PlannedEntry>& entries, const Options& options) {
     return report;
 }
 
-}  // namespace metadata_batch
+}  // namespace MetadataBatch

@@ -17,7 +17,7 @@
 #include <regex>
 #include <string>
 
-namespace metadata_tags {
+namespace MetadataTags {
 
 namespace {
 
@@ -379,4 +379,4 @@ std::optional<std::string> read_tag(const std::string& path, const std::string& 
     return std::nullopt;
 }
 
-}  // namespace metadata_tags
+}  // namespace MetadataTags

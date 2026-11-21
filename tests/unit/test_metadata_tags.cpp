@@ -8,7 +8,7 @@
 
 #include "MetadataTags.hpp"
 
-namespace mt = metadata_tags;
+namespace mt = MetadataTags;
 namespace fs = std::filesystem;
 
 namespace {

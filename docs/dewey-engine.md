@@ -6,8 +6,11 @@ and what a vault of notes has to look like before anything is written to disk. N
 model. That is deliberate. Rules that can be checked with a unit test should be checked with one, and
 the fuzzy parts should stay out of the way until they are actually needed.
 
-Everything below lives in `app/include` and `app/lib`, is picked up by the existing source glob, and
-has a Catch2 file in `tests/unit`. All twelve test files are registered in `app/CMakeLists.txt`.
+Everything below lives in `app/include` and `app/lib` and has a Catch2 file in `tests/unit`. All fifteen
+test files are registered in `app/CMakeLists.txt`. Twelve modules are picked up by the existing source glob.
+The three tag modules (`MetadataTags`, `MetadataApply`, `MetadataBatch`) are the exception: they need the
+vendored TagLib in `third_party/taglib`, so they are left out of the app glob and built into the test target
+only, until the main binary links TagLib.
 
 ## Modules
 
@@ -24,6 +27,9 @@ has a Catch2 file in `tests/unit`. All twelve test files are registered in `app/
 | `LinkAudit` | The bidirectional-link-engine (v2.0.0) rules for skills. Reads `### > target` and `### < source` contract blocks and audits them by link-matching, not by counting mentions. Also finds chains and loops, lists everything that refers to a skill before it is removed, checks a replacement is wired, and writes a contract block only when every field is real. |
 | `SourceLedger` | The Quiet Council's source arithmetic. Judges a URL's tier on its host alone, merges every researcher's citations into one numbered registry (dedupe key, convergence at three finders), remaps `[SOURCE_n]` tags in a single pass, and prices age and distance from the evidence: a decay class per domain, a temporal penalty that stops at a per-class cap, a citation-depth penalty, and the final weight. "Today" is passed in; nothing reads the clock. |
 | `QuietCouncil` | The rest of the Quiet Council (v3.1.0) that is rules rather than research. The thirteen-researcher registry, depth to model choice, a cost estimate with the academic acknowledgement, session ids, domain routing (six classes, blends of two), audience calibration, the contradiction and steelman rules, the eight Kaizen flags and the three-in-a-row improvement trigger, entity and slug rules, and the plain-Markdown knowledge graph: confirmed facts, disputes, topic index, session log, wiki page. Writers never overwrite; a failed write is reported, not thrown. It reads the graph back for the prior-knowledge block and for stale facts. |
+| `MetadataTags` | Reads and writes tags through the vendored TagLib: ID3 v2.3 for MP3, WAV and AIFF, iTunes atoms for the MP4 family, Vorbis comments for FLAC, Ogg and Opus. The key-to-frame mapping is the one in Metadata Maestro's `mm.py`. Track and disc take `3` or `3/12`; anything else is refused before the file is touched. |
+| `MetadataApply` | The safety layer around a tag write. A fingerprint (size and modification time) stops a file that changed since the plan. A backup is made first; one that matches the plan's fingerprint is our own from a crashed run and is rolled back, any other stops that file. A failed write puts the original back. The result is read back, so a tag that did not stick is reported as dropped. Also `find_marks`, `restore` and `clean` (a dry run unless told otherwise). |
+| `MetadataBatch` | Runs a plan in batches. Progress goes in a plain tab-separated file, one line per file, and only `ok` lines count, so failures are retried. A free-space check comes first: each folder needs the size of its files plus a tenth. A failing file is recorded and the rest carry on. Files run one at a time. |
 
 ## The command-line tool
 
@@ -171,7 +177,9 @@ Change them if you disagree.
   fits, and whether a register entry contradicts a sub-rule all need a person or a model. The code
   validates what those steps produce. It does not produce it.
 - Any hook into the Qt app. The modules are not yet called from the GUI or the headless runtime.
-- Writing tags to media files. `MetadataPlan` stops at the plan.
+- Cover art, and the image and remux writers. `MetadataTags` writes MP3, M4A, FLAC and Ogg tags; it does not
+  embed covers, write EXIF or XMP, or remux a container. The folder manifest, the Audiobookshelf sidecar files
+  and the ledger log from `mm.py` are not ported either, and a plan has no file format yet (`mm.py` used JSON).
 - Reading or measuring media. `MediaCheck` needs the facts (bit rate, levels, tags) handed to it, and nothing
   here runs ffprobe or exiftool. Noise floor is not measured at all, and `MediaCheck` says so every time.
 - The Quiet Council's research itself. The Sonar calls, the thirteen prompts' wording, contradiction
@@ -185,4 +193,5 @@ Change them if you disagree.
   I ported from `SKILL.md` and its six sub-skills, and checked the result against the skill's list of rejected
   patterns. I read the worked example but did not use it as a test fixture.
 - A full app build. These modules were built and tested standalone; nobody has yet compiled them
-  inside the Qt project.
+  inside the Qt project. The CMake wiring for the tag modules was checked in a stand-in project with the same
+  TagLib block, source exclusion and link line, because Qt was not available where it was written.

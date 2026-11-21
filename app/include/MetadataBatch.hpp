@@ -1,5 +1,3 @@
-// MetadataBatch: runs a plan of tag edits in batches with a resumable progress file and a free-space
-// pre-flight. Ported from the apply loop in scripts/mm.py. Files are done one at a time, in plan order.
 #pragma once
 
 #include <cstdint>
@@ -11,12 +9,16 @@
 
 #include "MetadataApply.hpp"
 
-namespace metadata_batch {
+/**
+ * @brief Runs a plan of tag edits in batches, with a resumable progress file and a free-space check first. Ported
+ *        from the apply loop in mm.py. Files are done one at a time, in plan order.
+ */
+namespace MetadataBatch {
 
 struct PlannedEntry {
     std::string path;
-    metadata_apply::Fingerprint fingerprint;
-    std::vector<metadata_apply::Edit> edits;
+    MetadataApply::Fingerprint fingerprint;
+    std::vector<MetadataApply::Edit> edits;
 };
 
 /** @brief Progress lines are "ok<TAB>path" or "failed<TAB>path<TAB>error", with tab, newline and backslash escaped. */
@@ -34,7 +36,7 @@ using FreeSpace = std::function<std::uintmax_t(const std::string& folder)>;
 std::string space_problem(const std::vector<PlannedEntry>& entries, bool no_backup, const FreeSpace& free_space);
 
 /** @brief "name: key" for each dropped tag in one file. */
-std::vector<std::string> describe_drops(const std::string& path, const metadata_apply::Verdict& verdict);
+std::vector<std::string> describe_drops(const std::string& path, const MetadataApply::Verdict& verdict);
 
 struct BatchSummary {
     /** @brief 1-based. */
@@ -74,4 +76,4 @@ struct Report {
 
 Report run(const std::vector<PlannedEntry>& entries, const Options& options);
 
-}  // namespace metadata_batch
+}  // namespace MetadataBatch

@@ -9,8 +9,8 @@
 #include "MetadataBatch.hpp"
 #include "MetadataTags.hpp"
 
-namespace mb = metadata_batch;
-namespace ma = metadata_apply;
+namespace mb = MetadataBatch;
+namespace ma = MetadataApply;
 namespace fs = std::filesystem;
 
 namespace {
@@ -112,7 +112,7 @@ TEST_CASE("A plan runs in batches and records each file as done", "[batch]") {
     CHECK(report.batches == 2);
     CHECK(report.failures.empty());
     CHECK(report.dropped.empty());
-    CHECK(metadata_tags::read_tag(entries[1].path, "title") == std::optional<std::string>("Title two.mp3"));
+    CHECK(MetadataTags::read_tag(entries[1].path, "title") == std::optional<std::string>("Title two.mp3"));
     CHECK(mb::parse_progress(slurp(options.progress_file)).size() == 3);
     CHECK(fs::exists(entries[0].path + ma::kBackupSuffix));
     fs::remove_all(dir);

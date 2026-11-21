@@ -1,12 +1,14 @@
-// MetadataTags: native tag writing for the Metadata Maestro port, built on the vendored TagLib.
-// Key-to-frame mapping mirrors scripts/mm.py (ID3_MAP, MP4_MAP, VORBIS_MAP).
 #pragma once
 
 #include <optional>
 #include <string>
 #include <vector>
 
-namespace metadata_tags {
+/**
+ * @brief Native tag reading and writing for the Metadata Maestro port, built on the vendored TagLib. The key to
+ *        frame, atom and field mapping follows mm.py (ID3 v2.3, iTunes MP4 atoms, Vorbis comments).
+ */
+namespace MetadataTags {
 
 enum class Family { Id3, Mp4, Vorbis, Unsupported };
 
@@ -41,4 +43,4 @@ WriteResult write_tags(const std::string& path, const std::vector<Change>& chang
 /** @brief Current value for a key, or nullopt when absent or the file cannot be read. Track returns "n/total". */
 std::optional<std::string> read_tag(const std::string& path, const std::string& key);
 
-}  // namespace metadata_tags
+}  // namespace MetadataTags
