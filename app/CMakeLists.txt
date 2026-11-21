@@ -2050,6 +2050,7 @@ if(AI_FILE_SORTER_BUILD_TESTS)
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_tags.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_apply.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_batch.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_metadata_folder.cpp"
         ${AIFS_TAG_WRITER_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_quiet_council.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../tests/unit/test_protected_project_detector.cpp"
